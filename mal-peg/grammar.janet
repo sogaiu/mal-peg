@@ -86,7 +86,7 @@
   # => @["[:a :b :c]"]
 
   (peg/match grammar "{:a 1 :b 2}")
-  # => @{"{:a 1 :b 2}"]
+  # => @["{:a 1 :b 2}"]
 
   )
 
@@ -135,93 +135,110 @@
   (peg/match enlive-grammar "sym")
   # => @[{:content "sym" :tag :symbol} "sym"]
 
-  (peg/match enlive-grammar "'a")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol})
-      :tag :quote} "'a"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "'a")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol})
+        :tag :quote} "'a"]
+    ) # => true
 
-  (peg/match enlive-grammar "@a")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol})
-      :tag :deref} "@a"]
+  (deep=
+    #
+    (peg/match enlive-grammar "@a")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol})
+        :tag :deref} "@a"]
+    ) # => true
 
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "`a")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol})
+        :tag :quasiquote} "`a"]
+    ) # => true
 
-  (peg/match enlive-grammar "`a")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol})
-      :tag :quasiquote} "`a"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "~a")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol})
+        :tag :unquote} "~a"]
+    ) # => true
 
-  (peg/match enlive-grammar "~a")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol})
-      :tag :unquote} "~a"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "~@a")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol})
+        :tag :splice-unquote} "~@a"]
+    ) # => true
 
-  (peg/match enlive-grammar "~@a")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol})
-      :tag :splice-unquote} "~@a"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "(a b c)")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol}
+                   {:content "b"
+                    :tag :symbol}
+                   {:content "c"
+                    :tag :symbol})
+        :tag :list} "(a b c)"]
+    ) # => true
 
-  (peg/match enlive-grammar "(a b c)")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol}
-                {:content "b"
-                 :tag :symbol}
-                {:content "c"
-                 :tag :symbol})
-      :tag :list} "(a b c)"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "(a [:x :y] c)")
+    #
+    '@[{:content ({:content "a"
+                   :tag :symbol}
+                   {:content ({:content ":x"
+                               :tag :keyword}
+                               {:content ":y"
+                                :tag :keyword})
+                    :tag :vector}
+                   {:content "c"
+                    :tag :symbol})
+        :tag :list} "(a [:x :y] c)"]
+    ) # => true
 
-  (peg/match enlive-grammar "(a [:x :y] c)")
-  ``
-  '@[{:content ({:content "a"
-                 :tag :symbol}
-                {:content ({:content ":x"
-                            :tag :keyword}
-                           {:content ":y"
-                            :tag :keyword})
-                 :tag :vector}
-                {:content "c"
-                 :tag :symbol})
-      :tag :list} "(a [:x :y] c)"]
-  ``
-
-  (peg/match enlive-grammar "^{:a 1} [:x :y]")
-  ``
-  '@[{:content ({:content ({:content ":x"
-                            :tag :keyword}
-                           {:content ":y"
-                            :tag :keyword})
-                 :tag :vector}
-                {:content ({:content ":a"
-                            :tag :keyword}
-                           {:content "1"
-                            :tag :number})
-                 :tag :hash-map})
-      :tag :with-meta} "^{:a 1} [:x :y]"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "^{:a 1} [:x :y]")
+    #
+    '@[{:content ({:content ({:content ":x"
+                              :tag :keyword}
+                              {:content ":y"
+                               :tag :keyword})
+                   :tag :vector}
+                   {:content ({:content ":a"
+                               :tag :keyword}
+                               {:content "1"
+                                :tag :number})
+                    :tag :hash-map})
+        :tag :with-meta} "^{:a 1} [:x :y]"]
+    ) # => true
 
   (peg/match enlive-grammar ";; hi")
   # => @[";; hi"]
 
-  (peg/match enlive-grammar "[:x ;; hi\n :y]")
-  ``
-  '@[{:content ({:content ":x"
-                 :tag :keyword}
-                {:content ":y"
-                 :tag :keyword})
-      :tag :vector} "[:x ;; hi\n :y]"]
-  ``
+  (deep=
+    #
+    (peg/match enlive-grammar "[:x ;; hi\n :y]")
+    #
+    '@[{:content ({:content ":x"
+                   :tag :keyword}
+                   {:content ":y"
+                    :tag :keyword})
+        :tag :vector} "[:x ;; hi\n :y]"]
+    ) # => true
 
   (peg/match enlive-grammar "  7  ")
   # => @[{:content "7" :tag :number} "  7  "]
@@ -243,17 +260,19 @@
 
 (comment
 
-  (ast "(+ 1 2)")
-  ``
-  '{:content ({:content ({:content "+"
-                          :tag :symbol}
-                         {:content "1"
-                          :tag :number}
-                         {:content "2"
-                          :tag :number})
-               :tag :list})
-    :tag :source}
-  ``
+  (deep=
+    #
+    (ast "(+ 1 2)")
+    #
+    '{:content ({:content ({:content "+"
+                            :tag :symbol}
+                            {:content "1"
+                             :tag :number}
+                            {:content "2"
+                             :tag :number})
+                 :tag :list})
+      :tag :source}
+    ) # => true
 
   (ast ";; hello")
   # => nil
